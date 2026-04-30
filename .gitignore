@@ -1,0 +1,81 @@
+############################################
+#  General
+############################################
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+
+############################################
+#  Java / Spring Boot / Maven (Backend)
+############################################
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+.mvn/
+.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ
+.idea/
+*.iml
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# VS Code
+.vscode/
+
+############################################
+#  Environment Variables
+############################################
+.env
+.env.*
+application-local.properties
+
+############################################
+# Docker
+############################################
+docker-compose.override.yml
+
+############################################
+#  Frontend (React / Node)
+############################################
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Env files
+frontend/.env
+frontend/.env.*
+
+############################################
+# Test / Coverage
+############################################
+coverage/
+*.lcov
+
+############################################
+# Misc
+############################################
+*.pid
+*.seed
+
+# Ignore PDF
+project4-part1.pdf
+
+node_modules/
+dist/
+.env
+.env.*
