@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// Vite proxy forwards /api → http://localhost:8080;
+// Vite proxy forwards /api → http://localhost:8080
 
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api'
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 });
 
 export default api;
@@ -43,5 +43,4 @@ export const deleteResourceType = (id)       => api.delete(`/resource-types/${id
 
 // ── Audit Log ────────────────────────────────────────────────────────────────
 export const listAuditLog     = ()          => api.get('/audit-log').then(r => r.data);
-
 

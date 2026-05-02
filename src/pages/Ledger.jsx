@@ -4,7 +4,13 @@ import { listAccounts, getEntries } from '../api.js';
 import { useToast } from '../context/ToastContext.jsx';
 import Spinner from '../components/Spinner.jsx';
 
-function err(e) { return e?.response?.data?.message || e?.response?.data || e.message || 'Error'; }
+function err(e) {
+  const d = e?.response?.data;
+  if (typeof d === 'string') return d;
+  if (d?.message) return d.message;
+  if (d?.error)   return d.error;
+  return e?.message || 'An unexpected error occurred';
+}
 
 function SortArrow({ col, sortCol, sortDir }) {
   if (col !== sortCol) return <span className="sort-arrow">↕</span>;

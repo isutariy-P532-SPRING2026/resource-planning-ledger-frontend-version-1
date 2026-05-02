@@ -10,7 +10,13 @@ import Spinner     from '../components/Spinner.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 
-function err(e) { return e?.response?.data?.message || e?.response?.data || e.message || 'Error'; }
+function err(e) {
+  const d = e?.response?.data;
+  if (typeof d === 'string') return d;
+  if (d?.message) return d.message;
+  if (d?.error)   return d.error;
+  return e?.message || 'An unexpected error occurred';
+}
 
 /* ── Implement modal ────────────────────────────────────────────────────────── */
 function ImplementModal({ actionId, onClose, onDone }) {

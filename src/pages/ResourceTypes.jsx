@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { listResourceTypes, createResourceType, updateResourceType, deleteResourceType, depositToAccount } from '../api.js';
 import { useToast } from '../context/ToastContext.jsx';
 import Spinner      from '../components/Spinner.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 
-function err(e) { return e?.response?.data?.message || e?.response?.data || e.message || 'Error'; }
+function err(e) {
+  const d = e?.response?.data;
+  if (typeof d === 'string') return d;
+  if (d?.message) return d.message;
+  if (d?.error)   return d.error;
+  return e?.message || 'An unexpected error occurred';
+}
 
 /* ── Add Stock modal ─────────────────────────────────────────────────────────── */
 function AddStockModal({ rt, onClose, onDone }) {
@@ -62,17 +69,20 @@ function AddStockModal({ rt, onClose, onDone }) {
 /* ── Create / Edit modal ─────────────────────────────────────────────────────── */
 function ResourceTypeModal({ initial, onClose, onSaved }) {
   const isEdit = !!initial;
-  const [name, setName] = useState(initial?.name || '');
-  const [kind, setKind] = useState(initial?.kind || 'CONSUMABLE');
-  const [unit, setUnit] = useState(initial?.unitOfMeasure || '');
-  const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [name,     setName]     = useState(initial?.name || '');
+  const [kind,     setKind]     = useState(initial?.kind || 'CONSUMABLE');
+  const [unit,     setUnit]     = useState(initial?.unitOfMeasure || '');
+  const [initQty,  setInitQty]  = useState('');
+  const [saving,   setSaving]   = useState(false);
+  const [errors,   setErrors]   = useState({});
   const toast = useToast();
 
   function validate() {
     const e = {};
     if (!name.trim()) e.name = 'Name is required';
     if (!unit.trim()) e.unit = 'Unit of measure is required';
+    const qty = parseFloat(initQty);
+    if (initQty !== '' && (isNaN(qty) || qty < 0)) e.initQty = 'Must be a non-negative number';
     return e;
   }
 
@@ -86,6 +96,16 @@ function ResourceTypeModal({ initial, onClose, onSaved }) {
       const result  = isEdit
         ? await updateResourceType(initial.id, payload)
         : await createResourceType(payload);
+
+      // If an initial stock quantity was entered, deposit it immediately
+      const qty = parseFloat(initQty);
+      if (!isEdit && qty > 0 && result.poolAccountId) {
+        await depositToAccount(result.poolAccountId, {
+          amount: qty,
+          description: 'Initial stock deposit',
+        });
+      }
+
       toast(`Resource type ${isEdit ? 'updated' : 'created'}`, 'success');
       onSaved(result);
     } catch (e) { toast(err(e), 'error'); }
@@ -107,7 +127,6 @@ function ResourceTypeModal({ initial, onClose, onSaved }) {
           <div className="form-row">
             <label>Kind</label>
             {isEdit ? (
-              /* Kind is immutable after creation — changes break ledger semantics */
               <input value={kind} disabled style={{ background: 'var(--bg)', color: 'var(--muted)' }} />
             ) : (
               <select value={kind} onChange={e => setKind(e.target.value)}>
@@ -125,6 +144,21 @@ function ResourceTypeModal({ initial, onClose, onSaved }) {
               placeholder="e.g. kg, hours, units" />
             {errors.unit && <div className="field-error">{errors.unit}</div>}
           </div>
+          {!isEdit && (
+            <div className="form-row">
+              <label>Initial Stock (optional)</label>
+              <input type="number" step="any" min="0" value={initQty}
+                onChange={e => { setInitQty(e.target.value); setErrors(x => ({ ...x, initQty: '' })); }}
+                className={errors.initQty ? 'invalid' : ''}
+                placeholder={`e.g. 100${unit ? ' ' + unit.trim() : ''}`} />
+              {errors.initQty
+                ? <div className="field-error">{errors.initQty}</div>
+                : <div className="muted" style={{ fontSize: 11, marginTop: 3 }}>
+                    Deposited into the pool account right after creation. Leave blank to add later.
+                  </div>
+              }
+            </div>
+          )}
           <div className="modal-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
@@ -190,7 +224,15 @@ export default function ResourceTypes() {
               <tr key={rt.id}>
                 <td style={{ fontWeight: 500 }}>{rt.name}</td>
                 <td className="muted">{rt.unitOfMeasure}</td>
-                <td className="muted">{rt.poolAccountName || '—'}</td>
+                <td>
+                    {rt.poolAccountId
+                      ? <Link to={`/ledger?accountId=${rt.poolAccountId}`}
+                              style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
+                          {rt.poolAccountName}
+                        </Link>
+                      : <span className="muted">—</span>
+                    }
+                  </td>
                 <td>
                   <div className="flex gap-8">
                     {rt.poolAccountId && (

@@ -62,13 +62,28 @@ export default function LedgerView() {
                     key={a.id}
                     onClick={() => selectAccount(a.id)}
                     style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '7px 10px', borderRadius: 4, cursor: 'pointer',
                       background: a.id === selectedId ? '#eff6ff' : 'transparent',
                       color: a.id === selectedId ? 'var(--primary)' : 'var(--text)',
                       fontWeight: a.id === selectedId ? 600 : 400,
                     }}
                   >
-                    {a.name}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {a.belowZero && (
+                        <span title="Over-consumed" style={{
+                          width: 8, height: 8, borderRadius: '50%',
+                          background: 'var(--danger, #dc2626)', display: 'inline-block', flexShrink: 0,
+                        }} />
+                      )}
+                      {a.name}
+                    </span>
+                    <span style={{
+                      fontSize: 13, fontWeight: 600, fontFamily: 'monospace',
+                      color: a.belowZero ? 'var(--danger, #dc2626)' : 'var(--success, #15803d)',
+                    }}>
+                      {Number(a.balance).toFixed(2)}
+                    </span>
                   </div>
                 ))
               }
@@ -79,7 +94,7 @@ export default function LedgerView() {
         {/* Entries panel */}
         <div>
           {!selectedId
-            ? <div className="card"><p className="muted">Select an account to view entries.</p></div>
+            ? <div className="card"><p className="muted">Click an account on the left to view its ledger entries.</p></div>
             : (
               <div className="card">
                 <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
